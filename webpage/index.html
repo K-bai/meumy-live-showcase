@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" href="/favicon.png" type="image/x-icon" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.0.1/dist/echarts.min.js" integrity="sha256-CiuyzJ79h36eS2B+4SqzA0elMhSYkPsGmforYbgrYOM=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.1.2/dist/echarts.min.js" integrity="sha256-TI0rIaxop+pDlHNVI6kDCFvmpxNYUnVH/SMjknZ/W0Y=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js" integrity="sha256-In3CN7ZURQJ4NLxir70iD0vfibxQzEUvK/U5EUFnhU8=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
     <script src="js/moment.min.js"></script>
@@ -30,8 +30,8 @@
                 <li><a class="dropdown-item" href="https://live.bilibili.com/22384516" target="_blank">直播间</a></li>
                 <li><a class="dropdown-item" href="https://space.bilibili.com/617459493" target="_blank">个人主页</a></li>
                 <li><a class="dropdown-item" href="https://weibo.com/u/7079069131" target="_blank">微博 @呜米嗷呜</a></li>
+                <li><a class="dropdown-item" href="https://mht.meumy.club/" target="_blank">提问箱 @MeUmy的棉花糖</a></li>
                 <li><a class="dropdown-item" href="https://music.163.com/#/user/home?id=1306304320" target="_blank">网易云 @呜米嗷嗷嗷</a></li>
-                <li><a class="dropdown-item" href="https://www.pomeet.com/Umyyy1" target="_blank">POME提问箱 @呜米</a></li>
               </ul>
             </li>
             <li class="nav-item dropdown">
@@ -40,13 +40,13 @@
                 <li><a class="dropdown-item" href="https://live.bilibili.com/8792912" target="_blank">直播间</a></li>
                 <li><a class="dropdown-item" href="https://space.bilibili.com/745493" target="_blank">个人主页</a></li>
                 <li><a class="dropdown-item" href="https://weibo.com/u/7080286241" target="_blank">微博 @电击咩阿栗</a></li>
+                <li><a class="dropdown-item" href="https://mht.meumy.club/" target="_blank">提问箱 @MeUmy的棉花糖</a></li>
                 <li><a class="dropdown-item" href="https://music.163.com/#/user/home?id=1356709812" target="_blank">网易云 @咩栗咩咩咩</a></li>
-                <li><a class="dropdown-item" href="https://www.pomeet.com/Merry0" target="_blank">POME提问箱 @蜗牛姐姐小树洞</a></li>
               </ul>
             </li>
-            <li class="nav-item"><a class="nav-link" href="https://space.bilibili.com/674421433" target="_blank">呜米咩栗的草原日常</a></li>
+            <li class="nav-item"><a class="nav-link" href="https://space.bilibili.com/674421433" target="_blank">呜米咩栗的草原组</a></li>
             <li class="nav-item"><a class="nav-link" href="https://space.bilibili.com/674622242" target="_blank">MeUmy官方录播组</a></li>
-            <li class="nav-item"><a class="nav-link" href="http://v.meumy.live/?from=meumy.club" target="_blank">自动录播站</a></li>
+            <li class="nav-item"><a class="nav-link" href="https://meumy.club/" target="_blank">MeUmy草原平行时空</a></li>
           </ul>
         </div>
       </div>
@@ -114,10 +114,14 @@
           </div>
         </div>
       </div>
-      <div class="card card-body p-4 text-center mb-4 container">
-        <h4 class="pb-2">当天观众最爱发的词</h4>
+      <div class="card card-body p-4 text-center mb-0 container">
+        <h4 class="pb-2">{{words_title}}</h4>
         <div id="main_word1"><span class="fs-3">{{all_hot_words.all[1]}}</span><span class="fs-1 fw-bold px-4">{{all_hot_words.all[0]}}</span><span class="fs-5">{{all_hot_words.all[2]}}</span></div> 
         <div id="main_word2" class="text-secondary"><span class="px-2">{{all_hot_words.all[3]}}</span><span class="px-2">{{all_hot_words.all[4]}}</span><span class="px-2">{{all_hot_words.all[5]}}</span><span class="px-2">{{all_hot_words.all[6]}}</span><span class="px-2">{{all_hot_words.all[7]}}</span><span class="px-2">{{all_hot_words.all[8]}}</span><span class="px-2">{{all_hot_words.all[9]}}</span></div>
+      </div>
+      <div class="form-check form-switch text-start mt-2 mb-4 text-secondary">
+        <input class="form-check-input" type="checkbox" v-model="show_key_words" id="show_key_words">
+        <label class="form-check-label" for="show_key_words">显示直播弹幕关键词(Beta)</label>
       </div>
       <div id="main_chart" class="container" style="height:420px;"></div>
       <div class="card card-body  p-4 my-4 container">
@@ -140,8 +144,26 @@
             <label class="form-check-label" for="show_superchat">在图中显示醒目留言</label>
           </div>
           <div class="col-md-6">
-            <input class="form-check-input" type="checkbox" v-model="show_keywords_density" id="show_keywords_density">
-            <label class="form-check-label" for="show_keywords_density">仅显示打call密度(定位歌)</label>
+            <div>
+              <input class="form-check-input" type="radio" value="all" name="show_density" v-model="show_density" id="show_all_density">
+              <label class="form-check-label" for="show_all_density">显示全部</label>
+            </div>
+            <div>
+              <input class="form-check-input" type="radio" value="call" name="show_density" v-model="show_density" id="show_keywords_density">
+              <label class="form-check-label" for="show_keywords_density">仅显示打call密度(定位歌)</label>
+            </div>
+            <div>
+              <input class="form-check-input" type="radio" value="haha" name="show_density" v-model="show_density" id="show_haha_density">
+              <label class="form-check-label" for="show_haha_density">仅显示哈密度</label>
+            </div>
+            <div>
+              <input class="form-check-input" type="radio" value="fuck" name="show_density" v-model="show_density" id="show_fuck_density">
+              <label class="form-check-label" for="show_fuck_density">仅显示草密度</label>
+            </div>
+            <div>
+              <input class="form-check-input" type="radio" value="problem" name="show_density" v-model="show_density" id="show_problem_density">
+              <label class="form-check-label" for="show_problem_density">仅显示？密度</label>
+            </div>
           </div>
           <div class="col-md-6">
             <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#peak_list_container">
@@ -199,7 +221,31 @@
         鼠标滚轮（或双指缩放）调整时间轴比例，悬停（或点击）显示弹幕热词与醒目留言。<br />
         醒目留言小圆点可能会重叠，把时间轴放大再看会比较好！<br />
         由于数据统计不及时，默认直播开始时间可能稍稍滞后。可根据录播手动设定直播开始时间进行校准，方便找录播。<br />
-        对于录播分片的情况，可把直播开始时间设为对应分片的开始时间，使时间轴统一。
+        对于录播分片的情况，可把直播开始时间设为对应分片的开始时间，使时间轴统一。<br />
+        直播弹幕关键词(Beta)功能基于2021年8月前全部直播弹幕数据对当天弹幕关键词进行分析，仅供参考。
+      </div>
+      <div class="card card-body mt-4 text-center">
+        <h5>🌟揉爪爪夸夸榜🌟</h5>
+        <h6>发弹幕最多的是——</h5>
+        <div class="row align-items-center mt-3">
+          <div class="col-md-4" id="interact_top1">
+            <p class="fs-2 my-0 mt-2">👑</p>
+            <p class="fs-1 fw-bold my-0">{{most_interact[0][0]}}</p>
+            <div>{{most_interact[0][1]}}</div>
+          </div>
+          <div class="col-md-4 order-md-first" id="interact_top2">
+            <p class="fs-3 my-0 mt-2">{{most_interact[1][0]}}</p>
+            <div>{{most_interact[1][1]}}</div>
+          </div>
+          <div class="col-md-4" id="interact_top3">
+            <p class="fs-5 mb-0 mt-2">{{most_interact[2][0]}}</p>
+            <div>{{most_interact[2][1]}}</div>
+          </div>
+        </div>
+        <div class="fs-6 text-secondary mt-4" id="interact_top10"><span class="px-2">{{most_interact[3][0]}}</span><span class="px-2">{{most_interact[4][0]}}</span><span class="px-2">{{most_interact[5][0]}}</span><span class="px-2">{{most_interact[6][0]}}</span><span class="px-2">{{most_interact[7][0]}}</span><span class="px-2">{{most_interact[8][0]}}</span><span class="px-2">{{most_interact[9][0]}}</span></div>
+      </div>
+      <div class="card card-body p-4 text-center my-4 container">
+        <h5>都给我关注<a href="https://space.bilibili.com/617459493" target="_blank">呜米</a>和<a href="https://space.bilibili.com/745493" target="_blank">咩栗</a>啊啊啊——</h5>
       </div>
       <div class="card card-body p-4 text-center my-4 container"><div class="row gy-5">
         <div class="col-md-6">
@@ -225,9 +271,6 @@
           </div>
         </div>
       </div></div>
-      <div class="card card-body p-4 text-center mb-4 container">
-        <h5>都给我关注<a href="https://space.bilibili.com/617459493" target="_blank">呜米</a>和<a href="https://space.bilibili.com/745493" target="_blank">咩栗</a>啊啊啊——</h5>
-      </div>
       <div class="p-4 mb-4 container">
         <div class="collapse mb-4" id="useless_data">
           <div class="card card-body mt-4">
@@ -262,37 +305,31 @@
               </div>
             </div>
           </div>
-          <div class="card card-body mt-4 text-center">
-            <h5>发弹幕最多的几个人</h5>
-            <div class="row mt-3">
-              <div class="col" id="interact_top2">
-                <p class="fs-3">{{most_interact[1][0]}}</p>
-                <div>{{most_interact[1][1]}}</div>
-              </div>
-              <div class="col" id="interact_top1">
-                <p class="fs-1 fw-bold">{{most_interact[0][0]}}</p>
-                <div>{{most_interact[0][1]}}</div>
-              </div>
-              <div class="col" id="interact_top3">
-                <p class="fs-5">{{most_interact[2][0]}}</p>
-                <div>{{most_interact[2][1]}}</div>
-              </div>
-            </div>
-            <div class="fs-6 text-secondary mt-4" id="interact_top10"><span class="px-2">{{most_interact[3][0]}}</span><span class="px-2">{{most_interact[4][0]}}</span><span class="px-2">{{most_interact[5][0]}}</span><span class="px-2">{{most_interact[6][0]}}</span><span class="px-2">{{most_interact[7][0]}}</span><span class="px-2">{{most_interact[8][0]}}</span><span class="px-2">{{most_interact[9][0]}}</span></div>
-          </div>
         </div>
         <a class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#useless_data" role="button">扩展数据</a>
         <span class="fs-6 text-secondary mx-sm-4">没啥事的人别看</span>
       </div>
+      <!-- 不复存在的草原组
       <div class="card card-body p-4 text-center mb-4 container">
         <p class="mb-0">欢迎有能man加入呜米和咩栗的后援组：</p>
-        <p class="mb-0"><a href="https://space.bilibili.com/674421433" target="_blank">呜米咩栗的草原日常</a></p>
+        <p class="mb-0"><a href="https://space.bilibili.com/674421433" target="_blank">呜米咩栗的草原组</a></p>
         <p class="mb-0">具体要求请看<a href="https://t.bilibili.com/452538400215603810" target="_blank">这里</a>~</p>
         <p class="mb-0">请加审核群：295744056！</p>
       </div>
+      -->
+      <!-- 重生的小天使 -->
+      <div class="card card-body p-4 text-center mb-4 container">
+        <p class="mb-0">感谢辛勤的官方录播man <a class="fw-bold" href="https://space.bilibili.com/4164913" target="_blank">樱木_AoUs</a> 在</p>
+        <p class="mb-0">磨刀暴鲨发18+的群友</p>
+        <p class="mb-0">和 直播间抢着刀片哥</p>
+        <p class="mb-0">的同时 没日没夜的录制上传每日直播录像！</p>
+        <p class="mb-0">录播请认准这里→<a href="https://space.bilibili.com/674622242" target="_blank">MeUmy录播组</a> 其他人的录播都是妖艳贱货。</p>
+      </div>
       <div class="card card-body bg-light p-4 my-4 container text-secondary">
-        <p>注：单推人指的是在呜米直播间挂【揪米】或在咩栗直播间挂【搞咩嘢】牌子的观众</p>
-        <p class="mb-0">有建议？有bug？给<a href="https://space.bilibili.com/1818479062" target="_blank">这个人</a>发私信痛骂他，他什么都会听的</p>
+        <p>注：单推人指的是在呜米直播间挂【小米星】或在咩栗直播间挂【小綿花】牌子的观众</p>
+        <p>有建议？有bug？给<a href="https://space.bilibili.com/1818479062" target="_blank">这个人</a>发私信痛骂他，他什么都会听的</p>
+        <p>本项目已开源，<a href="https://github.com/K-bai/meumy-live-showcase" target="_blank">Github页面</a>。欢迎Star, Fork!</p>
+        <p class="mb-0">本站部分统计灵感及2021年2月10日以前数据来自<a href="https://matsuri.icu/" target="_blank">matsuri.icu</a>。感谢大佬的授权使用！</p>
       </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW" crossorigin="anonymous"></script>

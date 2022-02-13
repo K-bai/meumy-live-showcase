@@ -663,8 +663,6 @@ read_file_list()
 draw_init()
 
 //自适应
-setTimeout(function (){
-	 window.onresize = function () { //监听窗口大小变化事件
-	 myChart.resize();//重绘图表
-	 }
-},200)
+  window.onresize = function() {
+    myChart.resize();
+  };

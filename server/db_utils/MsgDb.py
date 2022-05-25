@@ -1,9 +1,9 @@
 import os, datetime, time
 
 from peewee import SqliteDatabase
-from .db_declaration import Danmu, Gift, SuperChat, Captain, View, LiveStatus
-MODELS = [Danmu, Gift, SuperChat, Captain, View, LiveStatus]
-MSG_TYPE = ['DANMU_MSG', 'SEND_GIFT', 'SUPER_CHAT_MESSAGE', 'USER_TOAST_MSG', 'VIEW', 'LIVE']
+from .db_declaration import Danmu, Gift, SuperChat, Captain, View, LiveStatus, WatchedChange
+MODELS = [Danmu, Gift, SuperChat, Captain, View, LiveStatus, WatchedChange]
+MSG_TYPE = ['DANMU_MSG', 'SEND_GIFT', 'SUPER_CHAT_MESSAGE', 'USER_TOAST_MSG', 'VIEW', 'LIVE', 'WATCHED_CHANGE']
 
 
 class MsgDb:
@@ -19,26 +19,31 @@ class MsgDb:
             ('journal_mode', 'wal'))) # Use WAL-mode (you should always use this!).
         self.db.connect()
         self.db.bind(MODELS)
+        self.db.create_tables(MODELS)
+
+    
+    def close(self):
+        self.db.close()
 
     def __user_medal(self, msg):
         '''
         格式化信息中的牌子
         '''
-        if msg['type'] == 'DANMU_MSG':
-            if msg['data']['info'][3]: 
-                if msg['data']['info'][3][11] == 1:
+        if msg['cmd'] == 'DANMU_MSG':
+            if msg['info'][3]: 
+                if msg['info'][3][11] == 1:
                     return {
-                        'n': msg['data']['info'][3][1], #牌子名
-                        'l': msg['data']['info'][3][0], #牌子等级
-                        'c': msg['data']['info'][3][10], #舰长类别
+                        'n': msg['info'][3][1], #牌子名
+                        'l': msg['info'][3][0], #牌子等级
+                        'c': msg['info'][3][10], #舰长类别
                     }
         else:
-            if msg['data']['data']['medal_info']:
-                if msg['data']['data']['medal_info']['is_lighted'] == 1:
+            if msg['data']['medal_info']:
+                if msg['data']['medal_info']['is_lighted'] == 1:
                     return {
-                        'n': msg['data']['data']['medal_info']['medal_name'], #牌子名
-                        'l': msg['data']['data']['medal_info']['medal_level'], #牌子等级
-                        'c': msg['data']['data']['medal_info']['guard_level'], #舰长类别
+                        'n': msg['data']['medal_info']['medal_name'], #牌子名
+                        'l': msg['data']['medal_info']['medal_level'], #牌子等级
+                        'c': msg['data']['medal_info']['guard_level'], #舰长类别
                     }
         return {
             'n': None, #牌子名
@@ -51,57 +56,62 @@ class MsgDb:
         向列表插入一条信息
         识别并格式化
         '''
-        if msg['type'] == 'DANMU_MSG':
+        if msg['cmd'] == 'DANMU_MSG':
             medal = self.__user_medal(msg)
-            insert_list[msg['type']].append({
+            insert_list[msg['cmd']].append({
                 'captain': medal['c'], #舰长类别
-                'content': msg['data']['info'][1], #弹幕文本
+                'content': msg['info'][1], #弹幕文本
                 'medal_level': medal['l'], #牌子等级
                 'medal_name': medal['n'], #牌子名
-                'timestamp': msg['data']['info'][0][4], #时间戳
-                'uid': msg['data']['info'][2][0], #用户id
-                'username': msg['data']['info'][2][1], #用户名
+                'timestamp': msg['info'][0][4], #时间戳
+                'uid': msg['info'][2][0], #用户id
+                'username': msg['info'][2][1], #用户名
             })
-        elif msg['type'] == 'SEND_GIFT':
+        elif msg['cmd'] == 'SEND_GIFT':
             medal = self.__user_medal(msg)
-            insert_list[msg['type']].append({
+            insert_list[msg['cmd']].append({
                 'captain': medal['c'], #舰长类别
-                'gift_coin_type': msg['data']['data']['coin_type'], #货币类型
-                'gift_name': msg['data']['data']['giftName'], #礼物名
-                'gift_num': msg['data']['data']['num'], #礼物数量
-                'gift_price': msg['data']['data']['price'], #礼物单价
-                'gift_total_price': msg['data']['data']['total_coin'], #礼物总价
+                'gift_coin_type': msg['data']['coin_type'], #货币类型
+                'gift_name': msg['data']['giftName'], #礼物名
+                'gift_num': msg['data']['num'], #礼物数量
+                'gift_price': msg['data']['price'], #礼物单价
+                'gift_total_price': msg['data']['total_coin'], #礼物总价
                 'medal_level': medal['l'], #牌子等级
                 'medal_name': medal['n'], #牌子名
-                'timestamp': msg['data']['data']['timestamp']*1000, #时间戳
-                'uid': msg['data']['data']['uid'], #用户id
-                'username': msg['data']['data']['uname'], #用户名
+                'timestamp': msg['data']['timestamp']*1000, #时间戳
+                'uid': msg['data']['uid'], #用户id
+                'username': msg['data']['uname'], #用户名
             })
-        elif msg['type'] == 'USER_TOAST_MSG':
-            insert_list[msg['type']].append({
-                'captain': msg['data']['data']['guard_level'], #大航海类别
-                'captain_num': msg['data']['data']['num'], #数量
-                'captain_total_price': msg['data']['data']['price'], #真实花费价格（RMB）
-                'timestamp': msg['data']['data']['start_time']*1000, #时间戳
-                'uid': msg['data']['data']['uid'], #用户id
-                'username': msg['data']['data']['username'], #用户名
+        elif msg['cmd'] == 'USER_TOAST_MSG':
+            insert_list[msg['cmd']].append({
+                'captain': msg['data']['guard_level'], #大航海类别
+                'captain_num': msg['data']['num'], #数量
+                'captain_total_price': msg['data']['price'], #真实花费价格（RMB）
+                'timestamp': msg['data']['start_time']*1000, #时间戳
+                'uid': msg['data']['uid'], #用户id
+                'username': msg['data']['username'], #用户名
             })
-        elif msg['type'] == 'SUPER_CHAT_MESSAGE':
+        elif msg['cmd'] == 'SUPER_CHAT_MESSAGE':
             medal = self.__user_medal(msg)
-            insert_list[msg['type']].append({
+            insert_list[msg['cmd']].append({
                 'captain': medal['c'], #舰长类别
                 'medal_level': medal['l'], #牌子等级
                 'medal_name': medal['n'], #牌子名
-                'superchat_content': msg['data']['data']['message'], #醒目留言文本
-                'superchat_price': msg['data']['data']['price'], #价格（RMB）
-                'timestamp': msg['data']['data']['ts']*1000, #时间戳
-                'uid': msg['data']['data']['uid'], #用户id
-                'username': msg['data']['data']['user_info']['uname'], #用户名
+                'superchat_content': msg['data']['message'], #醒目留言文本
+                'superchat_price': msg['data']['price'], #价格（RMB）
+                'timestamp': msg['data']['ts']*1000, #时间戳
+                'uid': msg['data']['uid'], #用户id
+                'username': msg['data']['user_info']['uname'], #用户名
             })
-        elif msg['type'] == 'VIEW':
-            insert_list[msg['type']].append({
+        elif msg['cmd'] == 'VIEW':
+            insert_list[msg['cmd']].append({
                 'timestamp': msg['timestamp'], #时间戳
                 'view': msg['data'], #人气值
+            })
+        elif msg['cmd'] == 'WATCHED_CHANGE':
+            insert_list[msg['cmd']].append({
+                'timestamp': msg['timestamp'], #时间戳
+                'watched': msg['data']['num'], #看过的人数
             })
         else:
             return None
@@ -126,6 +136,7 @@ class MsgDb:
             Captain.insert_many(insert_list['USER_TOAST_MSG']).execute()
             SuperChat.insert_many(insert_list['SUPER_CHAT_MESSAGE']).execute()
             View.insert_many(insert_list['VIEW']).execute()
+            WatchedChange.insert_many(insert_list['WATCHED_CHANGE']).execute()
 
     def live_action(self, timestamp, action):
         '''

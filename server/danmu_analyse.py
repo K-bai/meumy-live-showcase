@@ -57,10 +57,13 @@ class Danmu:
         self.medal_name = medal_name
         self.sc_list = sc_list
         self.dm_list = dm_list
+        self.keywords_re = keywords_re
         self.dm_list.sort(key=lambda x:x['timestamp'])
         self.sc_list.sort(key=lambda x:x['timestamp'])
         time_list = [dm['timestamp'] for dm in self.dm_list]
         self.time_range = [min(time_list), max(time_list)]
+        self.dm_list_for_density = self.time_slicing(self.dm_list, DENSITY_TIME_INTERVAL)
+        self.dm_list_for_hotword = self.time_slicing(self.dm_list, HOT_WORDS_TIME_INTERVAL)
         self.captain_dm_list = [
             dm for dm in self.dm_list 
             if dm['medal_name'] in self.medal_name and dm['captain'] > 0
@@ -68,22 +71,6 @@ class Danmu:
         self.gachi_dm_list = [
             dm for dm in self.dm_list 
             if dm['medal_name'] in self.medal_name
-        ]
-        self.singing_dm_list = [
-            dm for dm in self.dm_list 
-            if keywords_re.search(dm['content'])
-        ]
-        self.haha_dm_list = [
-            dm for dm in self.dm_list 
-            if haha_filter.search(dm['content'])
-        ]
-        self.fuck_dm_list = [
-            dm for dm in self.dm_list 
-            if fuck_filter.search(dm['content'])
-        ]
-        self.problem_dm_list = [
-            dm for dm in self.dm_list 
-            if problem_filter.search(dm['content'])
         ]
 
     def time_axis(self, time_interval=5):
@@ -98,21 +85,22 @@ class Danmu:
             axis.append(axis[-1]+time_ms)
         return axis
 
-    def time_slicing(self, dm_list=(), time_axis=()):
+    def time_slicing(self, dm_list=(), time_interval=5):
         '''
-        将传入的列表按时间间隔分开
-        time_axis是一个列表 表示需要分开的时间段
+        将传入的列表按时间间隔分开 该列表已经排序
+        按照第一个弹幕时间点 根据time_interval(秒)切分
         '''
-        # 遍历时间轴
-        rst = []
-        for t in range(len(time_axis)-1):
-            rst.append([])
-            # 遍历弹幕列表
-            for dm in dm_list:
-                if dm["timestamp"]>time_axis[t] and dm["timestamp"]<=time_axis[t+1]:
-                    rst[-1].append(dm)
-                elif dm["timestamp"]>time_axis[t+1]:
-                    break
+        time_interval_ms = time_interval*1000
+        rst = [[],]
+        # 起始时间
+        timestamp_cursor = dm_list[0]['timestamp'] + time_interval_ms
+        # 遍历列表
+        for dm in dm_list:
+            if dm['timestamp'] <= timestamp_cursor:
+                rst[-1].append(dm)
+            else:
+                rst.append([dm,])
+                timestamp_cursor += time_interval_ms
         return rst
     
     def hot_words(self, dm_list=(), num=10):
@@ -159,7 +147,7 @@ class Danmu:
         x = np.array(self.time_axis(DENSITY_TIME_INTERVAL))
         y = np.array([
             len(x) 
-            for x in self.time_slicing(dm_list=dm_list, time_axis=self.time_axis(DENSITY_TIME_INTERVAL))
+            for x in self.dm_list_for_density
         ])
         # 数据量太少就返回空
         if len(y)<30:
@@ -200,24 +188,24 @@ class Danmu:
             'x': density_time_axis,
             'total': [
                 len(x) 
-                for x in self.time_slicing(dm_list=self.dm_list, time_axis=density_time_axis)
+                for x in self.dm_list_for_density
             ],
             'call': [
-                len(x) 
-                for x in self.time_slicing(dm_list=self.singing_dm_list, time_axis=density_time_axis)
+                len([x for x in slice if self.keywords_re.search(x['content'])])
+                for slice in self.dm_list_for_density
             ],
             'haha': [
-                len(x) 
-                for x in self.time_slicing(dm_list=self.haha_dm_list, time_axis=density_time_axis)
+                len([x for x in slice if haha_filter.search(x['content'])])
+                for slice in self.dm_list_for_density
             ],
             'fuck': [
-                len(x) 
-                for x in self.time_slicing(dm_list=self.fuck_dm_list, time_axis=density_time_axis)
+                len([x for x in slice if fuck_filter.search(x['content'])])
+                for slice in self.dm_list_for_density
             ],
             'problem': [
-                len(x) 
-                for x in self.time_slicing(dm_list=self.problem_dm_list, time_axis=density_time_axis)
-            ]
+                len([x for x in slice if problem_filter.search(x['content'])])
+                for slice in self.dm_list_for_density
+            ],
         }
         # 2. 分段弹幕热词(10s)
         hot_words_time_axis = self.time_axis(HOT_WORDS_TIME_INTERVAL)
@@ -225,7 +213,7 @@ class Danmu:
             hot_words_time_axis,
             [
                 self.hot_words(dm_list=x, num=SLICE_HOT_WORDS_NUMBER) 
-                for x in self.time_slicing(dm_list=self.dm_list, time_axis=hot_words_time_axis)
+                for x in self.dm_list_for_hotword
             ]
         ))
         # 3. sc列表
@@ -273,7 +261,10 @@ def dir_update():
     if DATE_LIST:
         date_list = DATE_LIST
     else:
-        date_list = [datetime.date.today()]
+        # 以东四区作为一天时间的分割
+        t = datetime.datetime.today()
+        dt = datetime.timedelta(hours=4)
+        date_list = [(t-dt).date()]
     for vup in VUP_LIST:
         # 遍历每个vup
         db = MsgDb(vup["id"])
@@ -313,6 +304,8 @@ def dir_update():
                             break
             else:
                 print('[{:s}] 无需更新 {:s}-{:s}, 未开播'.format(time.strftime("%Y-%m-%d %H:%M:%S"), vup["id"], date_n))
+        # 关闭数据库
+        db.close()
     if need_update:
         with open(os.path.join(DANMU_SAVE_PATH, DANMU_LIST_NAME), 'w') as f:
             # 倒序排序
@@ -339,6 +332,9 @@ def write_json(vup_id, date, idx, db):
     fn = '{:s}-{:s}.json'.format(vup_id, date_n)
     print('[{:s}] 正在更新 {:s}'.format(time.strftime("%Y-%m-%d %H:%M:%S"), fn))
     # 收集弹幕数据
+    db_message = db.query_msg(date, idx)
+    if len(db_message[0]) == 0:
+        print('[{:s}] 实际上'.format(time.strftime("%Y-%m-%d %H:%M:%S"), fn))
     dm_list = Danmu(*db.query_msg(date, idx), tag, keywords_re)
     # 写入文件
     with open(os.path.join(DANMU_SAVE_PATH,fn), 'w', encoding='utf-8') as f:
@@ -365,18 +361,17 @@ VUP_LIST = [
     {'id': '22384516', 'tag': ['揪米', '小米星'], 'keywords_re': SINGING_CALL_RE},
     {'id': '8792912', 'tag': ['搞咩嘢', '小綿花'], 'keywords_re': SINGING_CALL_RE}
 ]
-FORCE_UPDATE = True
+FORCE_UPDATE = False
 DATE_LIST = None
 '''
 DATE_LIST = []
-date_range = (datetime.date(2020, 9, 12), datetime.date(2021, 8, 27))
+date_range = (datetime.date(2022, 3, 9), datetime.date(2022, 3, 9))
 cur = date_range[0]
 one_day = datetime.timedelta(days=1)
 while cur<=date_range[1]:
     DATE_LIST.append(cur)
     cur += one_day
 '''
-
 
 
 if __name__ == "__main__":

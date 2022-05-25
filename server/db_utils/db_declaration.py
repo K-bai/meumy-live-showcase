@@ -50,6 +50,9 @@ class View(Model):
     timestamp = IntegerField()
     view = IntegerField()
 
+class WatchedChange(Model):
+    timestamp = IntegerField()
+    watched = IntegerField()
 
 class Danmu2(Danmu):
     class Meta:
@@ -80,3 +83,8 @@ class View2(Model):
     class Meta:
         schema = "merry"
         table_name = "view"
+
+class WatchedChange2(Model):
+    class Meta:
+        schema = "merry"
+        table_name = "watchedchange"

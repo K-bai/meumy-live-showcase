@@ -661,3 +661,8 @@ document.getElementById('peak_list_container').addEventListener('shown.bs.collap
 read_file_list()
 //初始化图表
 draw_init()
+
+//自适应
+  window.onresize = function() {
+    myChart.resize();
+  };

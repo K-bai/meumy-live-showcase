@@ -159,9 +159,17 @@ function update_page(){
     document.getElementById("live_start_time").oninput = null
     document.getElementById("live_start_time").value = live_start_time.format("HH:mm:ss")
     document.getElementById("live_start_time").oninput = validate_time
-    //录播跳转
-    document.getElementById("jump_to_recording").href="https://space.bilibili.com/674622242/video?keyword="+encodeURIComponent(moment(app_data.date_n).format("YYYY年M月D日"))
-
+    //录播跳转 在2022-01-08后呜米的录播跳转合集 在2022-02-24后咩栗的录播跳转合集
+    let cur_date = app_data.date_n.split("-")[0]
+    if (moment(cur_date).isAfter('2022-01-08') && app_data.vup_id === '22384516'){
+        document.getElementById("jump_to_recording").href="https://space.bilibili.com/617459493/channel/seriesdetail?sid=379199&ctype=0"
+    }
+    else if (moment(cur_date).isAfter('2022-02-24') && app_data.vup_id === '8792912'){
+        document.getElementById("jump_to_recording").href="https://space.bilibili.com/745493/channel/seriesdetail?sid=2060035"
+    }
+    else {
+        document.getElementById("jump_to_recording").href="https://space.bilibili.com/674622242/video?keyword="+encodeURIComponent(moment(cur_date).format("YYYY年M月D日"))
+    }
 }
 
 function data_transpose(x, y){
@@ -441,11 +449,13 @@ function draw() {
 工具函数
 */
 function format_duration(t){
-    var m = Math.floor(t.asMinutes()).toString()
+    var h = t.hours().toString()
+    var m = t.minutes().toString()
     var s = t.seconds().toString()
+    if (h.length == 1) { h = "0" + h }
     if (m.length == 1) { m = "0" + m }
     if (s.length == 1) { s = "0" + s }
-    return m + ":" + s
+    return h + ":" + m + ":" + s
 }
 function set_display_time(t) {
     // 设置显示时间
